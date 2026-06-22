@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "copilot/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Go: lint, build, test ──────────────────────────────────────────────────
+  go:
+    name: Go Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: Install protoc
+        run: |
+          PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+          curl -LO $PB_REL/download/v25.3/protoc-25.3-linux-x86_64.zip
+          unzip -q protoc-25.3-linux-x86_64.zip -d $HOME/.local
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install protoc-gen-go plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+
+      - name: Verify generated proto stubs are up-to-date
+        run: |
+          mkdir -p /tmp/pb
+          protoc \
+            --go_out=/tmp/pb --go_opt=paths=source_relative \
+            --go-grpc_out=/tmp/pb --go-grpc_opt=paths=source_relative \
+            proto/inference.proto
+          # Move generated files from nested path
+          mv /tmp/pb/proto/* /tmp/pb/ 2>/dev/null || true
+          diff pb/inference.pb.go /tmp/pb/inference.pb.go
+          diff pb/inference_grpc.pb.go /tmp/pb/inference_grpc.pb.go
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Build gateway
+        run: CGO_ENABLED=0 go build -ldflags="-s -w" ./cmd/gateway
+
+      - name: Run unit tests
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+
+  # ── Go vet + staticcheck ───────────────────────────────────────────────────
+  lint:
+    name: Go Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: staticcheck
+        uses: dominikh/staticcheck-action@v1
+        with:
+          version: "latest"
+          install-go: false
+
+  # ── Docker build smoke test ────────────────────────────────────────────────
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build gateway image
+        run: docker build -t ml-inference-gateway:ci -f Dockerfile .
+
+      - name: Build worker image
+        run: docker build -t ml-inference-worker:ci -f Dockerfile.worker .

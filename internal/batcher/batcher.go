@@ -115,7 +115,7 @@ func (b *Batcher) run() {
 		if len(batch) == 0 {
 			return
 		}
-		go b.dispatch_batch(batch)
+		go b.dispatchBatch(batch)
 		batch = make([]pendingRequest, 0, b.maxBatch)
 	}
 
@@ -153,7 +153,7 @@ func (b *Batcher) run() {
 	}
 }
 
-func (b *Batcher) dispatch_batch(batch []pendingRequest) {
+func (b *Batcher) dispatchBatch(batch []pendingRequest) {
 	reqs := make([]*pb.InferenceRequest, len(batch))
 	for i, pr := range batch {
 		reqs[i] = pr.req

@@ -1,0 +1,92 @@
+version: "3.9"
+
+# ── Shared worker configuration ───────────────────────────────────────────────
+x-worker: &worker-base
+  build:
+    context: .
+    dockerfile: Dockerfile.worker
+  restart: unless-stopped
+  networks:
+    - inference
+
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+
+  # ── Gateway ────────────────────────────────────────────────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"   # gRPC endpoint
+      - "8080:8080"     # HTTP /v1/chat/completions
+      - "2112:2112"     # Prometheus /metrics
+    command:
+      - "-workers=worker-1:50052,worker-2:50052,worker-3:50052"
+      - "-grpc-addr=:50051"
+      - "-http-addr=:8080"
+      - "-metrics-addr=:2112"
+      - "-health-interval=5s"
+      - "-batch-window=10ms"
+      - "-max-batch=8"
+      - "-queue-capacity=512"
+    depends_on:
+      - worker-1
+      - worker-2
+      - worker-3
+    restart: unless-stopped
+    networks:
+      - inference
+
+  # ── ML Worker Nodes ────────────────────────────────────────────────────────
+  worker-1:
+    <<: *worker-base
+    command: ["--port", "50052", "--worker-id", "worker-1"]
+
+  worker-2:
+    <<: *worker-base
+    command: ["--port", "50052", "--worker-id", "worker-2"]
+
+  worker-3:
+    <<: *worker-base
+    command: ["--port", "50052", "--worker-id", "worker-3"]
+
+  # ── Observability ─────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./metrics/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    restart: unless-stopped
+    networks:
+      - inference
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./metrics/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - inference
+
+# ─────────────────────────────────────────────────────────────────────────────
+networks:
+  inference:
+    driver: bridge
+
+volumes:
+  grafana-data:

@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package inference;
+
+option go_package = "github.com/likhith-ts/ml-inference-gateway/pb";
+
+// InferenceWorker is the gRPC service exposed by each ML backend worker node.
+service InferenceWorker {
+  // Predict runs inference on a batch of requests.
+  rpc Predict(BatchInferenceRequest) returns (BatchInferenceResponse);
+  // CheckHealth returns the health status of the worker.
+  rpc CheckHealth(HealthRequest) returns (HealthResponse);
+}
+
+// InferenceRequest represents a single inference request from a client.
+message InferenceRequest {
+  string request_id = 1;
+  string prompt     = 2;
+  int32  max_tokens = 3;
+}
+
+// InferenceResponse represents the result of a single inference.
+message InferenceResponse {
+  string request_id         = 1;
+  string text               = 2;
+  int64  processing_time_ms = 3;
+}
+
+// BatchInferenceRequest wraps multiple InferenceRequests into one RPC call.
+message BatchInferenceRequest {
+  repeated InferenceRequest requests = 1;
+}
+
+// BatchInferenceResponse wraps multiple InferenceResponses from one RPC call.
+message BatchInferenceResponse {
+  repeated InferenceResponse responses = 1;
+}
+
+// HealthRequest is an empty ping message.
+message HealthRequest {}
+
+// HealthResponse carries the health status of a worker node.
+message HealthResponse {
+  enum Status {
+    HEALTHY   = 0;
+    UNHEALTHY = 1;
+  }
+  Status status      = 1;
+  int32  active_load = 2; // number of requests currently being processed
+}

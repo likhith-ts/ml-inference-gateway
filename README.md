@@ -1,4 +1,4 @@
-# 🚀 Distributed ML Inference Gateway
+#  Distributed ML Inference Gateway
 
 [![CI](https://github.com/likhith-ts/ml-inference-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/likhith-ts/ml-inference-gateway/actions/workflows/ci.yml)
 
@@ -6,7 +6,7 @@ A **production-grade, highly concurrent distributed systems project** built in G
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -49,7 +49,7 @@ A **production-grade, highly concurrent distributed systems project** built in G
 
 ---
 
-## ✨ Key Engineering Features
+##  Key Engineering Features
 
 | Feature | Implementation |
 |---|---|
@@ -62,7 +62,7 @@ A **production-grade, highly concurrent distributed systems project** built in G
 
 ---
 
-## 🧰 Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -76,7 +76,7 @@ A **production-grade, highly concurrent distributed systems project** built in G
 
 ---
 
-## 📂 Repository Structure
+##  Repository Structure
 
 ```
 .
@@ -109,7 +109,7 @@ A **production-grade, highly concurrent distributed systems project** built in G
 
 ---
 
-## ⚡ Quick Start (Local Cluster)
+##  Quick Start (Local Cluster)
 
 Spin up the **entire stack** — gateway, three ML workers, Prometheus and Grafana — with a single command:
 
@@ -141,7 +141,7 @@ curl -s -X POST http://localhost:8080/v1/chat/completions \
 
 ---
 
-## 🏃 Running Tests
+##  Running Tests
 
 ```bash
 # All unit tests with race detector
@@ -154,7 +154,7 @@ go test -v ./internal/batcher/...
 
 ---
 
-## 🔧 Gateway Configuration Flags
+##  Gateway Configuration Flags
 
 | Flag | Default | Description |
 |---|---|---|
@@ -169,7 +169,7 @@ go test -v ./internal/batcher/...
 
 ---
 
-## 📊 Performance Characteristics
+##  Performance Characteristics
 
 Under a simulated workload of 10,000 concurrent requests:
 
@@ -178,8 +178,8 @@ Under a simulated workload of 10,000 concurrent requests:
 - **Fault Tolerance**: Zero request loss during simulated worker node failure — health checker reroutes in-flight requests within one health-check interval
 
 ---
-
-## 💡 Design Decisions
+<!--
+##  Design Decisions
 
 ### Why Go for the gateway?
 Python's Global Interpreter Lock (GIL) severely limits concurrent I/O throughput. Go's lightweight goroutines and native channel primitives allow the gateway to handle thousands of concurrent connections with minimal memory overhead and no GIL bottleneck.
@@ -192,7 +192,7 @@ Worker nodes process variable-length prompts. A naive round-robin allocates requ
 
 ---
 
-## 📝 Resume Bullet Points (Google X-Y-Z Format)
+##  Resume Bullet Points (Google X-Y-Z Format)
 
 - **Designed** a distributed ML inference gateway in Go handling **10 k+ concurrent requests**, routing across a replicated cluster of gRPC ML workers.
 - **Reduced P99 tail latency by 34 %** under heavy traffic by implementing a thread-safe **dynamic batching queue** (10 ms accumulation window) with configurable back-pressure via buffered channels.
@@ -201,7 +201,7 @@ Worker nodes process variable-length prompts. A naive round-robin allocates requ
 - **Instrumented** the full pipeline with **Prometheus + Grafana**, exporting P50/P95/P99 latency histograms, queue depth gauges, and per-worker connection counters.
 
 ---
-
+-->
 ## License
 
-[MIT](LICENSE)
+[GNU](LICENSE)
